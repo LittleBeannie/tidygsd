@@ -1,0 +1,35 @@
+Package: tidygsd
+Title: Group sequential design with tidy programming grammar.
+Version: 0.0.1
+Authors@R: c(
+    person("Keaven", "Anderson", email = "keaven_anderson@merck.com", role = c("aut")),
+    person("Yujie", "Zhao", email = "yujie.zhao@merck.com", role = c("aut", "cre")),
+    person("Nan", "Xiao", email = "nan.xiao1@merck.com", role = c("aut")),
+    person("Yilong", "Zhang", email = "elong0527@gmail.com", role = c("aut")),
+    person("Hongtao", "Zhang", email = "hongtao.zhang1@merck.com", role = c("ctb")),
+    person("Larry", "Leon", email = "larry.leon2@merck.com", role = c("ctb")),
+    person("Merck & Co., Inc., Rahway, NJ, USA and its affiliates", role = "cph")
+    )
+Description: The goal of 'tidygsd' is to enable better grammar in group sequential designs.
+License: GPL-3
+URL: https://github.com/littlebeannie/tidygsd
+BugReports: https://github.com/littlebeannie/tidygsd/issues
+Encoding: UTF-8
+VignetteBuilder:
+    knitr
+Imports:
+    R6,
+    dplyr,
+    ggplot2,
+    stats,
+    tibble
+Suggests:
+    gsDesign2,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Remotes:
+    Merck/simtrial
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3

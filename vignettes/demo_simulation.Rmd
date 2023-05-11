@@ -1,0 +1,150 @@
+---
+title: "Demo of simulations in group sequantial design"
+output:
+  rmarkdown::html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    number_sections: true
+    highlight: "textmate"
+    css: "custom.css"
+# bibliography: "example.bib"
+vignette: >
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{What the Vignette Does (Title Case)}
+---
+```{r, message=FALSE}
+library(distsurv)
+library(tidygsd)
+library(dplyr)
+```
+
+# Initialize a design for simulations
+
+We initialize a design in simulations by input its `n_sim` and `sample_size` first.
+```{r}
+x <- Design$new(n_sim = 10, 
+                sample_size = 200)
+x
+```
+
+```{r}
+x$n_sim
+x$sample_size
+```
+# Input strata parameters
+```{r}
+x |> input_stratum(name = c("Biomarker-positive", "Biomarker-negative"),
+                   ratio = 4:5)
+```
+
+# Define enrollment 
+
+When input the enrollment rates over time, we assume the enrollment rate is the same across all strata and arms.
+
+```{r}
+my_enroll <- distsurv::PiecewiseExponential$new(duration = c(4, 6), rate = c(8, 3))
+
+my_enroll %>% summary()
+```
+
+```{r}
+x <- x %>% input_enroll(dist = my_enroll)
+
+x
+```
+
+```{r}
+x$enroll %>% summary()
+```
+
+# Define the failure 
+
+In this example, we assume the failure rate is different by arms and 2 strata (biomarker positive/negative).
+
+```{r}
+my_fail_ctl_pos <- distsurv::PiecewiseExponential$new(duration = c(3, 3), rate = c(0.05, 0.03))
+my_fail_ctl_neg <- distsurv::PiecewiseExponential$new(duration = c(3, 3), rate = c(0.06, 0.05))
+my_fail_exp_pos <- distsurv::PiecewiseExponential$new(duration = c(3, 3), rate = c(0.04, 0.01))
+my_fail_exp_neg <- distsurv::PiecewiseExponential$new(duration = c(3, 3), rate = c(0.05, 0.03))
+```
+
+```{r, message=FALSE}
+x <- x |>
+  input_failure(arm = "Control",
+                stratum = "Biomarker-positive",
+                dist = my_fail_ctl_pos) |>
+  input_failure(arm = "Control",
+                stratum = "Biomarker-negative",
+                dist = my_fail_ctl_neg) |>
+  input_failure(arm = "Experimental",
+                stratum = "Biomarker-positive",
+                dist = my_fail_exp_pos) |>
+  input_failure(arm = "Experimental",
+                stratum = "Biomarker-negative",
+                dist = my_fail_exp_neg) 
+
+x
+```
+
+```{r}
+x$failure
+```
+
+# Define the dropout rates over time
+
+```{r}
+my_dropout_ctl_pos <- distsurv::PiecewiseExponential$new(duration = 100, rate = 0.002)
+my_dropout_ctl_neg <- distsurv::PiecewiseExponential$new(duration = 100, rate = 0.0025)
+my_dropout_exp_pos <- distsurv::PiecewiseExponential$new(duration = 100, rate = 0.001)
+my_dropout_exp_neg <- distsurv::PiecewiseExponential$new(duration = 100, rate = 0.0015)
+```
+
+```{r, message=FALSE}
+x <- x |>
+  input_dropout(arm = "Control",
+                stratum = "Biomarker-positive",
+                dist = my_dropout_ctl_pos) |>
+  input_dropout(arm = "Control",
+                stratum = "Biomarker-negative",
+                dist = my_dropout_ctl_neg) |>
+  input_dropout(arm = "Experimental",
+                stratum = "Biomarker-positive",
+                dist = my_dropout_exp_pos) |>
+  input_dropout(arm = "Experimental",
+                stratum = "Biomarker-negative",
+                dist = my_dropout_exp_neg) 
+
+x
+```
+
+```{r}
+x$dropout
+```
+
+
+# Simulate stratified TTE outcome in randomized trials
+```{r}
+set.seed(123)
+x %>% generate_tte(block = c(rep("Control", 2), rep("Experimental", 2)))
+```
+
+# References
+```{r}
+set.seed(123)
+simtrial::simPWSurv(n = 200,
+                    strata = tibble(Stratum = c("Positive", "Negative"), p = c(.3, .7)),
+                    block = c(rep("Control", 2), rep("Experimental", 2)),
+                    enrollRates = tibble(Stratum = "All", rate = c(8, 3), duration = c(4, 6)),
+                    failRates = tibble(Stratum = c("Positive", "Positive", "Negative", "Negative", "Positive", "Positive", "Negative", "Negative"),
+                                       period = rep(1:2, 4),
+                                       Treatment = rep(c("Control", "Experimental"), each = 4),
+                                       duration = rep(c(3, 3), 4),
+                                       rate = c(.05, .03, .06, .05, .04, .01, .05, .03)),
+                    dropoutRates = tibble(Stratum = c(rep("Positive", 2), rep("Negative", 2)),
+                                          period = rep(1, 4),
+                                          Treatment = rep(c("Control", "Experimental"), 2),
+                                          duration = rep(100, 4),
+                                          rate = c(0.002, 0.001, 0.0025, 0.0015)))
+```
+
